@@ -1,0 +1,16 @@
+URLS_LIST = [
+    "https://compass.uol/en/studios/digital-commerce-experiences/",
+    "https://compass.uol/en/studios/modern-application-mobile-apps/",
+    "https://compass.uol/en/studios/cloud-devsecops/",
+    "https://compass.uol/en/studios/financial-solutions/",
+    "https://compass.uol/en/studios/cyber-security/",
+    "https://compass.uol/en/studios/data-analytics/",
+    "https://compass.uol/en/studios/user-experience/",
+    "https://compass.uol/en/studios/agile-transformation/",
+    "https://compass.uol/en/studios/hyperautomation/",
+    "https://compass.uol/en/studios/quality-test-automation/",
+    "https://compass.uol/en/studios/future-hacking/",
+    "https://compass.uol/en/studios/gaming-xr-metaverse/",
+    "https://compass.uol/en/studios/cognitive-computing/",
+    "https://compass.uol/en/studios/edge-solutions/",
+]

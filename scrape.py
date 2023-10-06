@@ -1,61 +1,75 @@
 from selenium import webdriver
-
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import config
+import boto3
+import json
+
+translate_client = boto3.client(
+    service_name="translate", region_name="us-east-1", use_ssl=False
+)
 
 # Specify the path to your Chromium WebDriver executable
-
 chromium_driver_path = "/snap/bin/chromium.chromedriver"
-
-
 # Create Chromium WebDriver instance
-
 options = webdriver.ChromeOptions()
 
+options.add_argument("--enable-javascript")
 options.add_argument(
-    "--disable-notifications"
-)  # Pode ser útil para evitar pop-ups de cookies
-
-# Aceita todos os cookies automaticamente
+    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36"
+)
+options.add_argument("--disable-notifications")
 options.add_argument("--accept-all-cookies")
 
 options.binary_location = "/snap/bin/chromium"  # Path to your Chromium browser binary if not in the default location
 
+
 driver = webdriver.Chrome()
 
 
-# Open a webpage
+def extract_texttopages(urls):
+    all_contents = []
 
-driver.get("https://compass.uol/en/studios/digital-commerce-experiences/")
+    for url in urls:
+        driver.get(url)
+        time.sleep(1)
+
+        try:
+            accept_cookies_button = driver.find_element(
+                By.CSS_SELECTOR, "a.cc-btn.cc-DISMISS"
+            )
+            accept_cookies_button.click()
+            driver.implicitly_wait(2)
+        except:
+            pass  # Ignoramos exceções caso o botão não seja encontrado
+
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, "html.parser")
+        content = soup.get_text()
+
+        print(url)
+
+        content_dict = {"url": url, "content": content.replace("\n", "")}
+        all_contents.append(content_dict)
+        texto_completo = " ".join(item["content"] for item in all_contents)
+
+    driver.quit()
+
+    trans = translated_text(texto_completo)
+
+    return trans
 
 
-# Wait for dynamic content to load (you may need to adjust the wait time)
+def translated_text(contents):
+    resultTranslate = translate_client.translate_text(
+        Text=contents, SourceLanguageCode="en", TargetLanguageCode="pt"
+    )
+    translated_contents = resultTranslate["TranslatedText"]
 
-driver.implicitly_wait(10)
-
-
-# Get the page source after dynamic content has loaded
-
-page_source = driver.page_source
-
-
-# Parse the page source with BeautifulSoup
-
-soup = BeautifulSoup(page_source, "html.parser")
-
-# print(soup.prettify())
-
-# Now you can use BeautifulSoup to extract the content
-
-print(soup.get_text())
-
-# For example, find and print all div elements with class "some-class"
-
-divs = soup.find_all("div", id_="spa-root")
-
-for div in divs:
-    print(div.text)
+    return translated_contents
 
 
-# Close the Selenium driver
-
-driver.quit()
+print(extract_texttopages(config.URLS_LIST))
