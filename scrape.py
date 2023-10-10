@@ -9,8 +9,10 @@ import boto3
 import json
 
 translate_client = boto3.client(
-    service_name="translate", region_name="us-east-1", use_ssl=False
+    service_name="translate", region_name="us-east-1", use_ssl=True
 )
+
+s3 = boto3.client("s3", region_name="us-east-1")
 
 # Specify the path to your Chromium WebDriver executable
 chromium_driver_path = "/snap/bin/chromium.chromedriver"
@@ -53,23 +55,33 @@ def extract_texttopages(urls):
         print(url)
 
         content_dict = {"url": url, "content": content.replace("\n", "")}
+        print(content_dict["content"])
         all_contents.append(content_dict)
         texto_completo = " ".join(item["content"] for item in all_contents)
 
     driver.quit()
 
-    trans = translated_text(texto_completo)
-
-    return trans
+    return mandar_s3(texto_completo)
 
 
-def translated_text(contents):
-    resultTranslate = translate_client.translate_text(
-        Text=contents, SourceLanguageCode="en", TargetLanguageCode="pt"
-    )
-    translated_contents = resultTranslate["TranslatedText"]
+def mandar_s3(texto):
+    bucket_exists = False
+    bucket_name = "bedrocklex-knowledgebase"
 
-    return translated_contents
+    try:
+        s3.head_bucket(Bucket=bucket_name)
+        bucket_exists = True
+    except:
+        pass
+
+    if not bucket_exists:
+        s3.create_bucket(Bucket=bucket_name)
+        print("Bucket", bucket_name, "criado com sucesso.")
+
+    try:
+        s3.put_object(Bucket=bucket_name, Key="base.txt", Body=texto)
+    except Exception as e:
+        print("Erro:", str(e))
 
 
 print(extract_texttopages(config.URLS_LIST))
